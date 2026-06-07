@@ -88,8 +88,6 @@ function LoginContent() {
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-20 -left-20 w-64 h-64 bg-green-500/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-emerald-400/10 rounded-full blur-3xl animate-pulse delay-700" />
-        <div className="absolute top-1/3 right-10 text-6xl opacity-10 animate-bounceBall delay-300">⚽</div>
-        <div className="absolute bottom-1/4 left-8 text-4xl opacity-10 animate-bounceBall delay-500">⚽</div>
       </div>
 
       <div className={`bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm relative z-10 transition-all duration-500 ${ready ? 'animate-scaleIn' : 'opacity-0 scale-95'}`}>

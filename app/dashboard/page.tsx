@@ -116,7 +116,7 @@ export default function DashboardPage() {
 
           {groups.length === 0 ? (
             <div className="glass rounded-2xl p-10 text-center border border-white/10">
-              <div className="text-5xl mb-3 animate-bounceBall">🍺</div>
+              <div className="text-5xl mb-3">🍺</div>
               <p className="text-white font-semibold">Todavía no estás en ningún grupo</p>
               <p className="text-green-300 text-sm mt-1">Creá uno o pedile el enlace a alguien</p>
             </div>

@@ -190,7 +190,7 @@ export default function BracketPage() {
       {/* ── CHAMPION SPOTLIGHT ── */}
       <section className="px-4 pb-12 max-w-lg mx-auto text-center animate-fadeInUp delay-600">
         <div className="glass rounded-3xl p-8 border border-white/10">
-          <div className="text-6xl animate-beerFoam inline-block mb-3">🍺</div>
+          <div className="text-6xl mb-3">🍺</div>
           <h2 className="text-white font-black text-2xl">¿Quién levanta la Copa?</h2>
           <p className="text-green-300 mt-2 text-sm">
             El que acierte más y llegue campeón del prode, se lleva la 🍺 copa del mundo y el 70% del bote.

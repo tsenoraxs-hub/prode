@@ -26,6 +26,12 @@ function calcPoints(pred: Prediction, match: Match): number {
 }
 
 export async function POST(req: NextRequest) {
+  const adminPin = req.headers.get('x-admin-pin')
+  const expectedPin = process.env.NEXT_PUBLIC_ADMIN_PIN ?? '0000'
+  if (!adminPin || adminPin !== expectedPin) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+  }
+
   const { match_id } = await req.json()
 
   if (!match_id) {

@@ -16,7 +16,13 @@ type Match = {
 
 type ScoreDraft = { a: string; b: string }
 
+const ADMIN_PIN = process.env.NEXT_PUBLIC_ADMIN_PIN ?? '0000'
+
 export default function AdminPage() {
+  const [adminOk, setAdminOk] = useState(false)
+  const [pinInput, setPinInput] = useState('')
+  const [pinError, setPinError] = useState(false)
+
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
   const [scores, setScores] = useState<Record<string, ScoreDraft>>({})
@@ -25,6 +31,20 @@ export default function AdminPage() {
   const [newMatch, setNewMatch] = useState({ team_a: '', team_b: '', match_date: '' })
   const [adding, setAdding] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (sessionStorage.getItem('admin_ok') === 'true') setAdminOk(true)
+  }, [])
+
+  const checkPin = () => {
+    if (pinInput === ADMIN_PIN) {
+      sessionStorage.setItem('admin_ok', 'true')
+      setAdminOk(true)
+    } else {
+      setPinError(true)
+      setPinInput('')
+    }
+  }
 
   const showToast = (msg: string) => {
     setToast(msg)
@@ -40,7 +60,7 @@ export default function AdminPage() {
     setLoading(false)
   }, [])
 
-  useEffect(() => { fetchMatches() }, [fetchMatches])
+  useEffect(() => { if (adminOk) fetchMatches() }, [fetchMatches, adminOk])
 
   const closeMatch = async (match: Match) => {
     const draft = scores[match.id]
@@ -51,7 +71,6 @@ export default function AdminPage() {
 
     setClosing(match.id)
 
-    // 1. Actualizar el partido
     const { error: matchError } = await supabase
       .from('matches')
       .update({
@@ -67,10 +86,12 @@ export default function AdminPage() {
       return
     }
 
-    // 2. Calcular puntos via API route
     const res = await fetch('/api/calculate-points', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-pin': ADMIN_PIN,
+      },
       body: JSON.stringify({ match_id: match.id }),
     })
 
@@ -107,43 +128,84 @@ export default function AdminPage() {
     setAdding(false)
   }
 
+  /* ── PIN Gate ── */
+  if (!adminOk) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+        <div className="bg-gray-800 rounded-2xl p-8 w-full max-w-sm border border-gray-700 shadow-2xl">
+          <div className="text-center mb-6">
+            <div className="text-4xl mb-3">⚽</div>
+            <h1 className="text-xl font-black text-white">Admin Panel</h1>
+            <p className="text-gray-400 text-sm mt-1">Ingresá el PIN de administrador</p>
+          </div>
+          <input
+            type="password"
+            value={pinInput}
+            onChange={e => { setPinError(false); setPinInput(e.target.value.replace(/\D/g, '').slice(0, 4)) }}
+            onKeyDown={e => e.key === 'Enter' && checkPin()}
+            placeholder="••••"
+            maxLength={4}
+            inputMode="numeric"
+            className="w-full bg-gray-700 border border-gray-600 focus:border-green-500 rounded-xl px-4 py-3 text-white text-center text-2xl tracking-[0.5em] mb-3 focus:outline-none transition-colors"
+            autoFocus
+          />
+          {pinError && (
+            <p className="text-red-400 text-sm text-center mb-3">PIN incorrecto. Intentá de nuevo.</p>
+          )}
+          <button
+            onClick={checkPin}
+            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold transition-colors"
+          >
+            Entrar
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  /* ── Admin Panel ── */
   const pending  = matches.filter(m => m.status === 'pending')
   const finished = matches.filter(m => m.status === 'finished')
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      {/* Toast */}
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-gray-800 border border-gray-600 text-white text-sm px-5 py-3 rounded-2xl shadow-2xl max-w-xs text-center">
           {toast}
         </div>
       )}
 
-      {/* Header */}
       <div className="bg-gray-800 border-b border-gray-700 px-4 py-5">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-xl font-black">⚽ Admin Panel</h1>
             <p className="text-gray-400 text-sm mt-0.5">Gestión de partidos — Prode Mundial</p>
           </div>
-          <button
-            onClick={() => setShowAdd(true)}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl font-semibold text-sm flex items-center gap-1.5 transition-colors"
-          >
-            <Plus size={16} /> Agregar Partido
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAdd(true)}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl font-semibold text-sm flex items-center gap-1.5 transition-colors"
+            >
+              <Plus size={16} /> Agregar Partido
+            </button>
+            <button
+              onClick={() => { sessionStorage.removeItem('admin_ok'); setAdminOk(false) }}
+              className="bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-2 rounded-xl text-sm transition-colors"
+              title="Cerrar sesión admin"
+            >
+              Salir
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-8">
-
         {loading && (
           <div className="flex justify-center py-12">
             <Loader2 className="animate-spin text-green-400" size={36} />
           </div>
         )}
 
-        {/* Pending Matches */}
         {!loading && (
           <div>
             <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
@@ -176,10 +238,7 @@ export default function AdminPage() {
                   <div className="flex items-center gap-3 flex-wrap">
                     <span className="text-sm text-gray-400 font-medium">{match.team_a}</span>
                     <input
-                      type="number"
-                      min="0"
-                      max="99"
-                      placeholder="0"
+                      type="number" min="0" max="99" placeholder="0"
                       value={scores[match.id]?.a ?? ''}
                       onChange={e => setScores(prev => ({
                         ...prev,
@@ -189,10 +248,7 @@ export default function AdminPage() {
                     />
                     <span className="text-gray-500 font-bold">–</span>
                     <input
-                      type="number"
-                      min="0"
-                      max="99"
-                      placeholder="0"
+                      type="number" min="0" max="99" placeholder="0"
                       value={scores[match.id]?.b ?? ''}
                       onChange={e => setScores(prev => ({
                         ...prev,
@@ -218,7 +274,6 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Finished Matches */}
         {!loading && finished.length > 0 && (
           <div>
             <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
@@ -248,7 +303,6 @@ export default function AdminPage() {
         )}
       </div>
 
-      {/* Add Match Modal */}
       {showAdd && (
         <div
           className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-50"
@@ -264,15 +318,13 @@ export default function AdminPage() {
 
             <div className="space-y-3">
               <input
-                type="text"
-                value={newMatch.team_a}
+                type="text" value={newMatch.team_a}
                 onChange={e => setNewMatch(prev => ({ ...prev, team_a: e.target.value }))}
                 placeholder="Equipo A (ej: Argentina)"
                 className="w-full bg-gray-700 border border-gray-600 focus:border-green-500 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none"
               />
               <input
-                type="text"
-                value={newMatch.team_b}
+                type="text" value={newMatch.team_b}
                 onChange={e => setNewMatch(prev => ({ ...prev, team_b: e.target.value }))}
                 placeholder="Equipo B (ej: Brasil)"
                 className="w-full bg-gray-700 border border-gray-600 focus:border-green-500 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none"
@@ -280,8 +332,7 @@ export default function AdminPage() {
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">Fecha y hora del partido</label>
                 <input
-                  type="datetime-local"
-                  value={newMatch.match_date}
+                  type="datetime-local" value={newMatch.match_date}
                   onChange={e => setNewMatch(prev => ({ ...prev, match_date: e.target.value }))}
                   className="w-full bg-gray-700 border border-gray-600 focus:border-green-500 rounded-xl px-4 py-3 text-white focus:outline-none"
                 />
@@ -289,17 +340,12 @@ export default function AdminPage() {
             </div>
 
             <div className="flex gap-3 mt-5">
-              <button
-                onClick={() => setShowAdd(false)}
-                className="flex-1 border border-gray-600 text-gray-400 py-3 rounded-xl font-semibold"
-              >
+              <button onClick={() => setShowAdd(false)}
+                className="flex-1 border border-gray-600 text-gray-400 py-3 rounded-xl font-semibold">
                 Cancelar
               </button>
-              <button
-                onClick={addMatch}
-                disabled={adding}
-                className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
-              >
+              <button onClick={addMatch} disabled={adding}
+                className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">
                 {adding ? <Loader2 size={15} className="animate-spin" /> : null}
                 Agregar
               </button>

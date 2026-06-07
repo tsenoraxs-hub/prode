@@ -65,10 +65,6 @@ input[type='number'] { -moz-appearance: textfield; }
   0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
   100% { transform: translateY(60px) rotate(720deg); opacity: 0; }
 }
-@keyframes beerFoam {
-  0%, 100% { transform: scaleY(1); }
-  50%       { transform: scaleY(1.12); }
-}
 
 /* ══════════════════════════════════════════
    UTILITY CLASSES
@@ -83,7 +79,6 @@ input[type='number'] { -moz-appearance: textfield; }
 .animate-wiggle         { animation: wiggle 0.5s ease-in-out; }
 .animate-pulse-glow     { animation: pulse-glow 2s ease-in-out infinite; }
 .animate-countUp        { animation: countUp 0.4s ease both; }
-.animate-beerFoam       { animation: beerFoam 2s ease-in-out infinite; }
 .animate-gradientShift  {
   background-size: 200% 200%;
   animation: gradientShift 5s ease infinite;

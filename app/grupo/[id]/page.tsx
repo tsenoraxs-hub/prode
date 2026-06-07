@@ -260,7 +260,7 @@ export default function GroupPage() {
                       }`}
                       style={{ animationDelay: `${idx * 60}ms` }}>
                       <div className="w-10 text-center flex-shrink-0">
-                        {beer && <span className="text-2xl animate-beerFoam inline-block">{beer}</span>}
+                        {beer && <span className="text-2xl">{beer}</span>}
                         {!beer && medals[idx] && <span className="text-2xl">{medals[idx]}</span>}
                         {!beer && !medals[idx] && (
                           <span className={`text-base font-black ${isMe ? 'text-gray-400' : 'text-green-300/50'}`}>#{idx + 1}</span>
