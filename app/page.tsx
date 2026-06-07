@@ -91,7 +91,7 @@ function LoginContent() {
         .single()
 
       if (createError || !newUser) {
-        setError('Error al crear el usuario. Intentá de nuevo.')
+        setError(`Error: ${createError?.message ?? createError?.code ?? 'respuesta vacía'}`)
         setLoading(false)
         return
       }
