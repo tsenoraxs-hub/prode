@@ -1,0 +1,28 @@
+# env — nunca subir al repo
+.env
+.env.local
+.env*.local
+.env.local.example
+
+# Next.js
+.next/
+out/
+
+# Node
+node_modules/
+
+# Vercel
+.vercel
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Debug
+npm-debug.log*
+
+# Skills
+skills-lock.json
+
+# Claude Code
+.agents/
