@@ -114,7 +114,9 @@ type MainTab = typeof MAIN_TABS[number]['key']
 type BracketSubTab = 'grupos' | 'llaves' | 'premios'
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
-// Predicciones abiertas hasta el 17/06/2026 a las 23:59 hora española (CEST = UTC+2)
+// Cierre general: 17/06/2026 23:59 hora española (CEST = UTC+2)
+// Afecta: partidos, bracket de grupos y premios.
+// Las llaves (eliminatoria) no tienen cierre — se completan según clasifican los equipos.
 const PREDICTIONS_DEADLINE = new Date('2026-06-17T21:59:00Z')
 
 const isPredictionsClosed = () => new Date() > PREDICTIONS_DEADLINE
@@ -522,9 +524,16 @@ export default function GroupPage() {
             {/* Sub-tab: Grupos */}
             {bracketSubTab === 'grupos' && (
               <div>
-                <p className="text-green-400/70 text-xs text-center mb-4">
-                  Ordená los equipos para predecir la clasificación final de cada grupo.
-                </p>
+                {isPredictionsClosed() ? (
+                  <div className="glass rounded-2xl px-4 py-3 border border-red-400/30 bg-red-500/10 flex items-center gap-2.5 mb-4">
+                    <span className="text-lg">🔒</span>
+                    <p className="text-red-300 text-sm font-bold">Predicciones de grupos cerradas</p>
+                  </div>
+                ) : (
+                  <p className="text-green-400/70 text-xs text-center mb-4">
+                    Ordená los equipos para predecir la clasificación final de cada grupo.
+                  </p>
+                )}
                 <div className="space-y-3">
                   {GROUPS.map(g => {
                     const realStandings = calcRealStandings(g.id, matches)
@@ -555,16 +564,18 @@ export default function GroupPage() {
                                     {real.pts}p {real.gd > 0 ? '+' : ''}{real.gd}
                                   </span>
                                 )}
-                                <div className="flex flex-col gap-0.5">
-                                  <button onClick={() => moveTeam(g.id, ti, -1)} disabled={ti === 0}
-                                    className="p-0.5 rounded hover:bg-white/10 disabled:opacity-20 transition-colors">
-                                    <ChevronUp size={13} className="text-white" />
-                                  </button>
-                                  <button onClick={() => moveTeam(g.id, ti, 1)} disabled={ti === pred.length - 1}
-                                    className="p-0.5 rounded hover:bg-white/10 disabled:opacity-20 transition-colors">
-                                    <ChevronDown size={13} className="text-white" />
-                                  </button>
-                                </div>
+                                {!isPredictionsClosed() && (
+                                  <div className="flex flex-col gap-0.5">
+                                    <button onClick={() => moveTeam(g.id, ti, -1)} disabled={ti === 0}
+                                      className="p-0.5 rounded hover:bg-white/10 disabled:opacity-20 transition-colors">
+                                      <ChevronUp size={13} className="text-white" />
+                                    </button>
+                                    <button onClick={() => moveTeam(g.id, ti, 1)} disabled={ti === pred.length - 1}
+                                      className="p-0.5 rounded hover:bg-white/10 disabled:opacity-20 transition-colors">
+                                      <ChevronDown size={13} className="text-white" />
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             )
                           })}
@@ -592,6 +603,17 @@ export default function GroupPage() {
 
             {/* Sub-tab: Llaves */}
             {bracketSubTab === 'llaves' && (
+              <div>
+                <div className="glass rounded-2xl px-4 py-3 border border-blue-400/30 bg-blue-500/10 flex items-center gap-2.5 mb-4">
+                  <span className="text-lg">🔓</span>
+                  <div>
+                    <p className="text-blue-300 font-bold text-sm">Llaves siempre abiertas</p>
+                    <p className="text-blue-300/70 text-xs">Podés completarlas a medida que se definen los cruces</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            {bracketSubTab === 'llaves' && (
               <KnockoutBracket
                 groupPreds={groupPreds}
                 knockoutPreds={knockoutPreds}
@@ -602,9 +624,16 @@ export default function GroupPage() {
             {/* Sub-tab: Premios */}
             {bracketSubTab === 'premios' && (
               <div className="space-y-3">
-                <p className="text-green-400/70 text-xs text-center mb-4">
-                  Escribí tu predicción para cada premio FIFA. Se revelan al final del torneo.
-                </p>
+                {isPredictionsClosed() ? (
+                  <div className="glass rounded-2xl px-4 py-3 border border-red-400/30 bg-red-500/10 flex items-center gap-2.5">
+                    <span className="text-lg">🔒</span>
+                    <p className="text-red-300 text-sm font-bold">Predicciones de premios cerradas</p>
+                  </div>
+                ) : (
+                  <p className="text-green-400/70 text-xs text-center">
+                    Escribí tu predicción para cada premio FIFA. Se revelan al final del torneo.
+                  </p>
+                )}
                 {AWARDS.map(award => (
                   <div key={award.key} className="glass rounded-2xl p-4 border border-white/10">
                     <div className="flex items-start gap-3 mb-3">
@@ -617,13 +646,19 @@ export default function GroupPage() {
                         +{award.pts} pts
                       </span>
                     </div>
-                    <input
-                      type="text"
-                      value={awardPreds[award.key] ?? ''}
-                      onChange={e => updateAward(award.key, e.target.value)}
-                      placeholder={award.key === 'fair_play' ? 'Nombre del equipo…' : 'Nombre del jugador…'}
-                      className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white text-sm font-semibold placeholder-white/30 focus:outline-none focus:border-white/50 transition-colors"
-                    />
+                    {isPredictionsClosed() ? (
+                      <div className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white/50 text-sm font-semibold">
+                        {awardPreds[award.key] || <span className="italic text-white/20">Sin predicción</span>}
+                      </div>
+                    ) : (
+                      <input
+                        type="text"
+                        value={awardPreds[award.key] ?? ''}
+                        onChange={e => updateAward(award.key, e.target.value)}
+                        placeholder={award.key === 'fair_play' ? 'Nombre del equipo…' : 'Nombre del jugador…'}
+                        className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white text-sm font-semibold placeholder-white/30 focus:outline-none focus:border-white/50 transition-colors"
+                      />
+                    )}
                   </div>
                 ))}
               </div>
@@ -638,8 +673,8 @@ export default function GroupPage() {
                 {bracketSaving
                   ? <><Loader2 size={18} className="animate-spin" /> Guardando…</>
                   : bracketSaved
-                  ? <><CheckCircle2 size={18} /> ¡Predicciones guardadas!</>
-                  : <><Save size={18} /> Guardar bracket y premios</>}
+                  ? <><CheckCircle2 size={18} /> ¡Guardado!</>
+                  : <><Save size={18} /> {isPredictionsClosed() ? 'Guardar llaves' : 'Guardar bracket y premios'}</>}
               </button>
             </div>
           </div>
