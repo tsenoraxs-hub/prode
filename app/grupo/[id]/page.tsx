@@ -242,6 +242,17 @@ export default function GroupPage() {
       if (!existingGroup[row.world_group]) existingGroup[row.world_group] = ['', '', '', '']
       existingGroup[row.world_group][row.position - 1] = row.team
     }
+
+    // For groups without saved predictions, default to real standings order
+    const allMatches = mRes.data || []
+    for (const g of GROUPS) {
+      if (!existingGroup[g.id] || existingGroup[g.id].some(t => !t)) {
+        const real = calcRealStandings(g.id, allMatches)
+        if (real.some(s => s.played > 0)) {
+          existingGroup[g.id] = real.map(s => s.team)
+        }
+      }
+    }
     initGroupPreds(existingGroup)
 
     // Knockout predictions
