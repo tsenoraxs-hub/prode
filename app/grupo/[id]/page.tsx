@@ -114,9 +114,15 @@ type MainTab = typeof MAIN_TABS[number]['key']
 type BracketSubTab = 'grupos' | 'llaves' | 'premios'
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
-const isLocked = (m: Match) => m.status === 'finished' || new Date(m.match_date) <= new Date()
+// Predicciones abiertas hasta el 17/06/2026 a las 23:59 hora española (CEST = UTC+2)
+const PREDICTIONS_DEADLINE = new Date('2026-06-17T21:59:00Z')
 
-const fmtDate = (iso: string) => new Date(iso).toLocaleString('es-AR', {
+const isPredictionsClosed = () => new Date() > PREDICTIONS_DEADLINE
+
+const isLocked = (m: Match) => m.status === 'finished' || isPredictionsClosed()
+
+const fmtDate = (iso: string) => new Date(iso).toLocaleString('es-ES', {
+  timeZone: 'Europe/Madrid',
   weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
 })
 
@@ -428,6 +434,25 @@ export default function GroupPage() {
         {/* ── PARTIDOS ── */}
         {activeTab === 'predictions' && (
           <div className="space-y-3 animate-fadeInUp">
+            {/* Deadline banner */}
+            {isPredictionsClosed() ? (
+              <div className="glass rounded-2xl px-4 py-3 border border-red-400/30 bg-red-500/10 flex items-center gap-2.5">
+                <span className="text-lg">🔒</span>
+                <div>
+                  <p className="text-red-300 font-bold text-sm">Predicciones cerradas</p>
+                  <p className="text-red-300/70 text-xs">El plazo venció el 17/06 a las 23:59 (hora España)</p>
+                </div>
+              </div>
+            ) : (
+              <div className="glass rounded-2xl px-4 py-3 border border-green-400/30 bg-green-500/10 flex items-center gap-2.5">
+                <span className="text-lg">⏰</span>
+                <div>
+                  <p className="text-green-300 font-bold text-sm">Predicciones abiertas</p>
+                  <p className="text-green-300/70 text-xs">Cierre: 17/06 a las 23:59 hora España</p>
+                </div>
+              </div>
+            )}
+
             {matches.length === 0 && (
               <div className="glass rounded-2xl p-10 text-center border border-white/10">
                 <div className="text-4xl mb-3">📋</div>
@@ -817,7 +842,7 @@ export default function GroupPage() {
                 <p className="text-green-400 text-xs font-bold uppercase tracking-widest mb-3">📜 La letra chica</p>
                 <ul className="space-y-2 text-green-300 text-sm">
                   {[
-                    '⏱️ Los partidos se cierran cuando arrancan. Ni un segundo después.',
+                    '⏱️ Podés predecir todos los partidos hasta el 17/06 a las 23:59 (hora España).',
                     '📊 Los puntos van a todos tus grupos a la vez.',
                     '🏆 El bracket y premios se puntúan al finalizar el torneo.',
                     '👑 El admin tiene la última palabra. No hay apelación.',
