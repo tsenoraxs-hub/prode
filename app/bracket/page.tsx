@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Star } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 
 /* ── BRACKET DATA ──────────────────────────────────────
    Grupos confirmados del Mundial 2026.
@@ -92,13 +92,6 @@ export default function BracketPage() {
             <h1 className="text-2xl font-black text-white">Árbol del Mundial 🏆</h1>
             <p className="text-green-300 text-sm">Mundial 2026 · 48 equipos · 12 grupos</p>
           </div>
-          <button
-            onClick={() => router.push('/predicciones-bracket')}
-            className="flex items-center gap-1.5 px-3 py-2 glass rounded-xl text-yellow-300 font-bold text-xs border border-yellow-400/30 hover:bg-yellow-400/10 transition-all press"
-          >
-            <Star size={14} />
-            Mis predicciones
-          </button>
         </div>
       </div>
 
