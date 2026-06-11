@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Plus, LogOut, ChevronRight, Loader2, Trophy, GitBranch } from 'lucide-react'
+import { Plus, LogOut, ChevronRight, Loader2, Trophy, GitBranch, Star } from 'lucide-react'
 
 type GroupMember = {
   group_id: string
@@ -108,6 +108,15 @@ export default function DashboardPage() {
         >
           <GitBranch size={18} />
           Ver árbol de enfrentamientos 🏆
+        </button>
+
+        {/* Bracket predictions shortcut */}
+        <button
+          onClick={() => router.push('/predicciones-bracket')}
+          className={`press w-full glass text-white font-semibold py-3.5 px-5 rounded-2xl flex items-center justify-center gap-2.5 transition-all border border-yellow-400/30 text-sm bg-yellow-400/10 ${ready ? 'animate-fadeInUp delay-150' : 'opacity-0'}`}
+        >
+          <Star size={18} className="text-yellow-400" />
+          Mis predicciones de grupos y llaves ⚡
         </button>
 
         {/* Groups */}
