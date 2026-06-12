@@ -213,6 +213,7 @@ export default function GroupPage() {
   const [awardPreds,   setAwardPreds]   = useState<AwardPreds>({})
   const [bracketSaving, setBracketSaving] = useState(false)
   const [bracketSaved,  setBracketSaved]  = useState(false)
+  const [bracketError,  setBracketError]  = useState<string | null>(null)
 
   // ── Init group predictions ──────────────────────────────────────────────
   const initGroupPreds = useCallback((existing: GroupPreds) => {
@@ -271,10 +272,12 @@ export default function GroupPage() {
     }
     setKnockoutPreds(existingKnockout)
 
-    // Award predictions
+    // Award predictions (tabla puede no existir aún si no se corrió la migración)
     const existingAwards: AwardPreds = {}
-    for (const row of (awardRes.data || []))
-      existingAwards[row.award_key as AwardKey] = row.value
+    if (awardRes.data) {
+      for (const row of awardRes.data)
+        existingAwards[row.award_key as AwardKey] = row.value
+    }
     setAwardPreds(existingAwards)
 
     setLoading(false)
@@ -345,6 +348,7 @@ export default function GroupPage() {
   const saveBracket = async () => {
     if (!userId) return
     setBracketSaving(true)
+    setBracketError(null)
 
     const groupRows = []
     for (const [gId, teams] of Object.entries(groupPreds))
@@ -357,24 +361,40 @@ export default function GroupPage() {
         if (winner) knockoutRows.push({ user_id: userId, round, match_index: Number(idx), winner })
 
     const awardRows = Object.entries(awardPreds)
-      .filter(([, v]) => v && v.trim())
+      .filter(([, v]) => v && (v as string).trim())
       .map(([k, v]) => ({ user_id: userId, award_key: k, value: (v as string).trim() }))
 
-    await Promise.all([
-      groupRows.length > 0
-        ? supabase.from('bracket_group_predictions').upsert(groupRows, { onConflict: 'user_id,world_group,position' })
-        : Promise.resolve(),
-      knockoutRows.length > 0
-        ? supabase.from('bracket_knockout_predictions').upsert(knockoutRows, { onConflict: 'user_id,round,match_index' })
-        : Promise.resolve(),
-      awardRows.length > 0
-        ? supabase.from('award_predictions').upsert(awardRows, { onConflict: 'user_id,award_key' })
-        : Promise.resolve(),
-    ])
+    const errors: string[] = []
+
+    if (groupRows.length > 0) {
+      const { error } = await supabase
+        .from('bracket_group_predictions')
+        .upsert(groupRows, { onConflict: 'user_id,world_group,position' })
+      if (error) errors.push(`Grupos: ${error.message}`)
+    }
+
+    if (knockoutRows.length > 0) {
+      const { error } = await supabase
+        .from('bracket_knockout_predictions')
+        .upsert(knockoutRows, { onConflict: 'user_id,round,match_index' })
+      if (error) errors.push(`Llaves: ${error.message}`)
+    }
+
+    if (awardRows.length > 0) {
+      const { error } = await supabase
+        .from('award_predictions')
+        .upsert(awardRows, { onConflict: 'user_id,award_key' })
+      if (error) errors.push(`Premios: ${error.message}`)
+    }
 
     setBracketSaving(false)
-    setBracketSaved(true)
-    setTimeout(() => setBracketSaved(false), 3000)
+    if (errors.length > 0) {
+      setBracketError(errors.join(' · '))
+      setTimeout(() => setBracketError(null), 6000)
+    } else {
+      setBracketSaved(true)
+      setTimeout(() => setBracketSaved(false), 3000)
+    }
   }
 
   // ── Share handler ───────────────────────────────────────────────────────
@@ -665,17 +685,24 @@ export default function GroupPage() {
             )}
 
             {/* Sticky save */}
-            <div className="mt-6">
+            <div className="mt-6 space-y-2">
               <button onClick={saveBracket} disabled={bracketSaving}
                 className={`press w-full py-3.5 rounded-2xl font-black text-base transition-all shadow-xl flex items-center justify-center gap-2 ${
-                  bracketSaved ? 'bg-green-500 text-white shadow-green-500/30' : 'bg-white text-green-800 hover:bg-green-50 shadow-black/30'
+                  bracketError ? 'bg-red-500 text-white shadow-red-500/30' :
+                  bracketSaved ? 'bg-green-500 text-white shadow-green-500/30' :
+                  'bg-white text-green-800 hover:bg-green-50 shadow-black/30'
                 }`}>
                 {bracketSaving
                   ? <><Loader2 size={18} className="animate-spin" /> Guardando…</>
+                  : bracketError
+                  ? <>⚠️ Error al guardar</>
                   : bracketSaved
                   ? <><CheckCircle2 size={18} /> ¡Guardado!</>
                   : <><Save size={18} /> {isPredictionsClosed() ? 'Guardar llaves' : 'Guardar bracket y premios'}</>}
               </button>
+              {bracketError && (
+                <p className="text-red-400 text-xs text-center px-2">{bracketError}</p>
+              )}
             </div>
           </div>
         )}
